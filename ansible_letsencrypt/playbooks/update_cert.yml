@@ -1,0 +1,99 @@
+
+- name: Get cert
+  hosts: localhost
+  gather_facts: False
+  tasks:
+    - name: Set user's facts
+      set_fact:
+        u_certdir: "/etc/letsencrypt/live/{{ certname }}"
+        u_workdir: "../work/{{ lookup('password', '/dev/null chars=ascii_letters,digits length=16') }}"
+        u_backupdir: "../backup"
+        u_scriptsdir: "../scripts"
+        u_timestamp: "{{ lookup('pipe','date +%Y%m%d%H%M%S') }}"
+    - name: Create work dir
+      file:
+        path: "{{ u_workdir }}"
+        state: directory
+      notify: Remove work dir
+    - name: Get current cert name
+      set_fact:
+        u_cur_cert: "{{ lookup('pipe', 'basename $(readlink  -f ' + lookup('vars', 'u_certdir') + '/cert.pem)') }}"
+    - name: Get cert
+      shell: >
+        certbot certonly -n -q --cert-name {{ certname }} -d {{ certdomains }} --staging --force-renewal
+        --dns-google
+        --dns-google-credentials /etc/letsencrypt/_user/sol-dns-919b23bbb0e3.json
+        --dns-google-propagation-seconds 120
+    - name: Get new cert name
+      set_fact:
+        u_new_cert: "{{ lookup('pipe', 'basename $(readlink  -f ' + lookup('vars', 'u_certdir') + '/cert.pem)') }}"
+    - name: Stop if new and current cert names are equal
+      meta: end_play
+      when: u_cur_cert == u_new_cert
+    - name: Create firts PFX
+      shell: >
+        openssl pkcs12 -export
+        -out {{ u_workdir }}/{{ certname }}_cert_{{ u_timestamp }}.pfx
+        -in {{ u_certdir }}/cert.pem
+        -inkey {{ u_certdir }}/privkey.pem
+        -name {{ certname }}_{{ u_timestamp }} -password pass:''
+    - name: Create second PFX
+      shell: >
+        openssl pkcs12 -export
+        -out {{ u_workdir }}/{{ certname }}_chain_{{ u_timestamp }}.pfx
+        -in {{ u_certdir }}/chain.pem -nokeys -password pass:''
+    - name: Backing up PFXes
+      copy:
+        src: "{{ u_workdir }}/{{ item }}"
+        dest: "{{ u_backupdir }}/{{ item }}"
+        remote_src: yes
+      loop:
+        - "{{ certname }}_cert_{{ u_timestamp }}.pfx"
+        - "{{ certname }}_chain_{{ u_timestamp }}.pfx"
+  handlers:
+    - name: Remove work dir
+      file:
+        path: "{{ u_workdir }}"
+        state: absent
+
+- name: Update IIS
+  hosts: windows_test
+  gather_facts: False
+  tasks:
+    - name: Set user's facts
+      set_fact:
+        u_backupdir: "{{ hostvars.localhost.u_backupdir }}"
+        u_scriptsdir: "{{ hostvars.localhost.u_scriptsdir }}"
+        u_timestamp: "{{ hostvars.localhost.u_timestamp }}"
+        u_workdir: "c:/__ansible/{{ lookup('password', '/dev/null chars=ascii_letters,digits length=16') }}"
+    - name: Create work dir
+      win_file:
+        path: "{{ u_workdir }}"
+        state: directory
+      notify: Remove work dir
+    - name: Upload files
+      win_copy:
+        src: "{{ item.path }}"
+        dest: "{{ u_workdir }}/{{ item.name }}"
+      loop:
+        - path: "{{ u_backupdir }}/{{ certname }}_cert_{{ u_timestamp }}.pfx"
+          name: "{{ certname }}_cert_{{ u_timestamp }}.pfx"
+        - path: "{{ u_backupdir }}/{{ certname }}_chain_{{ u_timestamp }}.pfx"
+          name: "{{ certname }}_chain_{{ u_timestamp }}.pfx"
+        - path: "{{ u_scriptsdir }}/install_IIS_cert.py"
+          name: "install_IIS_cert.py"
+    - name: Install cert (run script)
+      win_command: >
+        py -3
+        {{ u_workdir }}/install_IIS_cert.py
+        -p {{ u_workdir }}/{{ certname }}_cert_{{ u_timestamp }}.pfx
+        -c {{ u_workdir }}/{{ certname }}_chain_{{ u_timestamp }}.pfx
+        -s {{ iissite }}
+        -b {{ iisbindinginfo }}
+      register: u_commandrv
+      changed_when: 'u_commandrv.stdout == "s_changed"'
+  handlers:
+    - name: Remove work dir
+      win_file:
+        path: "{{ u_workdir }}"
+        state: absent

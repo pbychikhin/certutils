@@ -1,0 +1,11 @@
+
+all:
+  children:
+    windows:
+      children:
+        windows_test:
+          hosts:
+            host-a.domain.tld:
+        windows_prod:
+          hosts:
+            host-b.domain.tld:

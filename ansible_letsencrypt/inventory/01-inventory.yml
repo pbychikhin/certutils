@@ -1,0 +1,11 @@
+
+all:
+  children:
+    windows:
+      children:
+        windows_test:
+        windows_prod:
+      vars:
+        ansible_connection: winrm
+        ansible_user: administrator
+        ansible_winrm_transport: ntlm

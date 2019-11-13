@@ -1,0 +1,8 @@
+1. Generate the cert
+    1.1 Generate with certbot
+    1.2 With openssl, create first PFX: put together "cert.pem" and "privkey.pem" into "cert.pfx"
+        openssl pkcs12 -export -out cert.pfx -in cert.pem -inkey privkey.pem -name "$(basename $(pwd))_$(date +%Y%m%d-%H%M%S)" -password pass:""
+    1.3 With openssl, create second PFX: put "chain.pem" into "chain.pfx":
+        openssl pkcs12 -export -out chain.pfx -in chain.pem -nokeys -password pass:""
+2. Install the cert to WebHosting store
+3. Install/Update IIS binging
