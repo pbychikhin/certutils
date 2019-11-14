@@ -1,4 +1,35 @@
 
+- name: Check vars
+  hosts: localhost
+  gather_facts: False
+  tasks:
+    - name: Check vars
+      fail:
+        msg: "Var {{ item.name }} undefined. {{ item.msg }}"
+      when: item.var == false
+      loop:
+        - name: "certname"
+          var: "{{ certname | default(false) }}"
+          msg: "Please define certname. It is used as a file name/frinedly name for a cert"
+        - name: "certdomains"
+          var: "{{ certdomains | default(false) }}"
+          msg: "Please define certdomains. This is the list of Subject alternative's"
+        - name: "iissite"
+          var: "{{ iissite | default(false) }}"
+          msg: "Please define iissite. This is the name of the site in IIS"
+        - name: "iisbindinginfo"
+          var: "{{ iisbindinginfo | default(false) }}"
+          msg: "Please define iisbindinginfo in the form IP:PORT:HOST_NAME. This is the IIS site's binding information"
+        - name: "mode"
+          var: "{{ mode | default(false) }}"
+          msg: "Please define mode. This is certbot's mode (staging or production)"
+        - name: "mode"
+          var: "{{ mode in ['staging', 'production'] }}"
+          msg: "Unknown certbot's mode. Please make sure it is either staging or production"
+        - name: "target"
+          var: "{{ target | default(false) }}"
+          msg: "Please define target. This is target hosts (windows, windows_test, windows_prod)"
+
 - name: Get cert
   hosts: localhost
   gather_facts: False
@@ -20,7 +51,9 @@
         u_cur_cert: "{{ lookup('pipe', 'basename $(readlink  -f ' + lookup('vars', 'u_certdir') + '/cert.pem)') }}"
     - name: Get cert
       shell: >
-        certbot certonly -n -q --cert-name {{ certname }} -d {{ certdomains }} --staging --force-renewal
+        certbot certonly -n -q --cert-name {{ certname }} -d {{ certdomains }}
+        {{ '--staging' if mode == 'staging' else '' }}
+        --force-renewal
         --dns-google
         --dns-google-credentials /etc/letsencrypt/_user/sol-dns-919b23bbb0e3.json
         --dns-google-propagation-seconds 120
@@ -57,7 +90,7 @@
         state: absent
 
 - name: Update IIS
-  hosts: windows_test
+  hosts: "{{ target }}"
   gather_facts: False
   tasks:
     - name: Set user's facts

@@ -3,4 +3,5 @@ Change the password in:
 Encrypt vault.yml this way:
     ansible-vault encrypt vault.yml
 Run the playbook this way:
-    ansible-playbook playbooks/update_cert.yml -i inventory --ask-vault-pass -e certname=domain.tld -e certdomains="domain.tld,*.domain.tld" -e iissite=domain.tld -e iisbindinginfo=1.2.3.4:443:domain.tld
+    ansible-playbook playbooks/update_cert.yml -i inventory --ask-vault-pass -e certname=domain.tld -e certdomains="domain.tld,*.domain.tld" -e iissite=domain.tld -e iisbindinginfo=1.2.3.4:443:domain.tld -e mode=staging -e target=windows_test
+Set mode and target in the command above to production and windows_prod if everything goes fine
