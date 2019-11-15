@@ -134,3 +134,4 @@
       win_file:
         path: "{{ u_workdir }}"
         state: absent
+      when: dirty is not defined
