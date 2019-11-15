@@ -115,6 +115,10 @@
           name: "{{ certname }}_chain_{{ u_timestamp }}.pfx"
         - path: "{{ u_scriptsdir }}/install_IIS_cert.py"
           name: "install_IIS_cert.py"
+    - name: Upgrade pip
+      win_command: "py -3 -m pip install --upgrade pip"
+    - name: Install/upgrade Python modules
+      win_command: "py -3 -m pip install --upgrade pythonnet"
     - name: Install cert (run script)
       win_command: >
         py -3
