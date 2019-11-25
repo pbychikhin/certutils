@@ -29,9 +29,9 @@ def get_logger(dsuffix=None):
     if dsuffix is not None and len(dsuffix) > 0:
         log_handler_file = logging.FileHandler(Path(sys.argv[0]).
                                                with_name(Path(sys.argv[0]).stem + "_" + dsuffix).
-                                               with_suffix(".log").as_posix(), mode="w")
+                                               with_suffix(".log").as_posix(), mode="a")
     else:
-        log_handler_file = logging.FileHandler(Path(sys.argv[0]).with_suffix(".log").as_posix(), mode="w")
+        log_handler_file = logging.FileHandler(Path(sys.argv[0]).with_suffix(".log").as_posix(), mode="a")
     log_handler_file.setLevel(logging.DEBUG)
     log_handler_file.setFormatter(log_formatter_file)
     log_logger = logging.getLogger(Path(sys.argv[0]).name)

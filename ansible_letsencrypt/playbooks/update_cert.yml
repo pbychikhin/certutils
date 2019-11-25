@@ -14,12 +14,9 @@
         - name: "certdomains"
           var: "{{ certdomains | default(false) }}"
           msg: "Please define certdomains. This is the list of Subject alternative's"
-        - name: "iissite"
-          var: "{{ iissite | default(false) }}"
-          msg: "Please define iissite. This is the name of the site in IIS"
-        - name: "iisbindinginfo"
-          var: "{{ iisbindinginfo | default(false) }}"
-          msg: "Please define iisbindinginfo in the form IP:PORT:HOST_NAME. This is the IIS site's binding information"
+        - name: "iis"
+          var: "{{ iis | default(false) }}"
+          msg: "Please define iis. This is the name and binding info (IP:PORT:HOST_NAME) of the site in IIS"
         - name: "mode"
           var: "{{ mode | default(false) }}"
           msg: "Please define mode. This is certbot's mode (staging or production)"
@@ -48,7 +45,7 @@
       notify: Remove work dir
     - name: Get current cert name
       set_fact:
-        u_cur_cert: "{{ lookup('pipe', 'basename $(readlink  -f ' + lookup('vars', 'u_certdir') + '/cert.pem)') }}"
+        u_cur_cert: "{{ lookup('pipe', 'basename $(readlink  -f ' + lookup('vars', 'u_certdir') + '/cert.pem)' + '|| echo __NONEXISTENT__') }}"
     - name: Get cert
       shell: >
         certbot certonly -n -q --cert-name {{ certname }} -d {{ certdomains }}
@@ -125,10 +122,11 @@
         {{ u_workdir }}/install_IIS_cert.py
         -p {{ u_workdir }}/{{ certname }}_cert_{{ u_timestamp }}.pfx
         -c {{ u_workdir }}/{{ certname }}_chain_{{ u_timestamp }}.pfx
-        -s {{ iissite }}
-        -b {{ iisbindinginfo }}
+        -s {{ item.site }}
+        -b {{ item.bindinginfo }}
       register: u_commandrv
       changed_when: 'u_commandrv.stdout == "s_changed"'
+      loop: "{{ iis }}"
   handlers:
     - name: Remove work dir
       win_file:
