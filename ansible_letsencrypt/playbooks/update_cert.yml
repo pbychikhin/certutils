@@ -91,7 +91,6 @@
 
 - name: Update IIS
   hosts: "{{ target }}"
-  gather_facts: False
   tasks:
     - name: Set user's facts
       set_fact:
@@ -119,6 +118,10 @@
       win_command: "py -3 -m pip install --upgrade pip"
     - name: Install/upgrade Python modules
       win_command: "py -3 -m pip install --upgrade pythonnet"
+    - name: Backup IIS config
+      win_command: "appcmd add backup letsencrytp_cert_{{ certname }}_{{ u_timestamp }}"
+      args:
+        chdir: "{{ ansible_env.windir }}\\system32\\inetsrv"
     - name: Install cert (run script)
       win_command: >
         py -3
