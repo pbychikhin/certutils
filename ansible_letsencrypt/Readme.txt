@@ -8,6 +8,7 @@ Create a YML document with vars. For example, create vars.yml with the content:
     certname: "domain.tld"
     certdomains: "domain.tld,*.domain.tld"
     mode: "staging"
+    googlecreds: "/the/path/to/creds.json"
     target: "windows_test"
     dirty: "yes"
     iis:
