@@ -26,6 +26,9 @@
         - name: "target"
           var: "{{ target | default(false) }}"
           msg: "Please define target. This is target hosts (windows, windows_test, windows_prod)"
+        - name: "googlecreds"
+          var: "{{ googlecreds | default(false) }}"
+          msg: "Please define path to a JSON file with Goodle DNS credentials"
 
 - name: Get cert
   hosts: localhost
@@ -52,7 +55,7 @@
         {{ '--staging' if mode == 'staging' else '' }}
         --force-renewal
         --dns-google
-        --dns-google-credentials /etc/letsencrypt/_user/sol-dns-919b23bbb0e3.json
+        --dns-google-credentials {{ googlecreds }}
         --dns-google-propagation-seconds 120
     - name: Get new cert name
       set_fact:
